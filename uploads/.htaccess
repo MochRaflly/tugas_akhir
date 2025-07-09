@@ -1,0 +1,15 @@
+# Deny access to all files except images, PDFs, and documents
+<FilesMatch "\.(php|php3|php4|php5|phtml|pl|py|jsp|asp|sh|cgi)$">
+    Order Deny,Allow
+    Deny from all
+</FilesMatch>
+
+# Allow access to safe file types
+<FilesMatch "\.(pdf|doc|docx|txt|jpg|jpeg|png|gif|zip|rar)$">
+    Order Allow,Deny
+    Allow from all
+</FilesMatch>
+
+# Set maximum file size
+php_value upload_max_filesize 10M
+php_value post_max_size 10M 

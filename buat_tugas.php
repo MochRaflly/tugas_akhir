@@ -42,57 +42,93 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <title>Buat Tugas</title>
-    <style>
-        body { font-family: Arial, sans-serif; background: #f4f4f4; }
-        .container { width: 90%; max-width: 600px; margin: 30px auto; background: #fff; padding: 30px; border-radius: 8px; box-shadow: 0 0 10px #ccc; }
-        h2 { margin-top: 0; }
-        .nav { margin-bottom: 20px; }
-        .nav a { margin-right: 15px; text-decoration: none; color: #007bff; }
-        .nav a:hover { text-decoration: underline; }
-        .error { color: red; margin-bottom: 10px; }
-        .success { color: green; margin-bottom: 10px; }
-        .form-group { margin-bottom: 15px; }
-        label { display: block; margin-bottom: 5px; }
-        input[type="text"], textarea, select, input[type="datetime-local"] { width: 100%; padding: 8px; box-sizing: border-box; }
-        button { padding: 10px 20px; background: #007bff; color: #fff; border: none; border-radius: 4px; cursor: pointer; }
-        button:hover { background: #0056b3; }
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Buat Tugas - Sistem Manajemen Sekolah</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="container">
-        <div class="nav">
-            <a href="dashboard_guru.php">Dashboard</a>
-            <a href="kelola_mapel.php">Kelola Mapel</a>
-            <a href="logout.php">Logout</a>
+        <h2>📝 Buat Tugas Baru</h2>
+        
+        <?php if ($error): ?>
+            <div class="alert alert-error">❌ <?php echo $error; ?></div>
+        <?php endif; ?>
+        <?php if ($success): ?>
+            <div class="alert alert-success">✅ <?php echo $success; ?></div>
+        <?php endif; ?>
+
+        <!-- Form Buat Tugas -->
+        <div class="panel">
+            <h3>➕ Buat Tugas Baru untuk Siswa</h3>
+            <form method="post" class="form">
+                <div class="form-group">
+                    <label for="mapel_id">Mata Pelajaran</label>
+                    <select name="mapel_id" id="mapel_id" required class="form-control">
+                        <option value="">-- Pilih Mata Pelajaran --</option>
+                        <?php while($m = mysqli_fetch_assoc($mapel_result)): ?>
+                            <option value="<?php echo $m['id']; ?>" 
+                                    <?php if(isset($_POST['mapel_id']) && $_POST['mapel_id']==$m['id']) echo 'selected'; ?>>
+                                <?php echo htmlspecialchars($m['nama_mapel']); ?>
+                            </option>
+                        <?php endwhile; ?>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="judul">Judul Tugas</label>
+                    <input type="text" name="judul" id="judul" required 
+                           value="<?php echo htmlspecialchars($_POST['judul'] ?? ''); ?>"
+                           placeholder="Contoh: Tugas Matematika Bab 1, Essay Bahasa Indonesia, dll."
+                           class="form-control">
+                </div>
+                
+                <div class="form-group">
+                    <label for="deskripsi">Deskripsi Tugas</label>
+                    <textarea name="deskripsi" id="deskripsi" rows="4" 
+                              placeholder="Jelaskan detail tugas yang harus dikerjakan siswa..."
+                              class="form-control"><?php echo htmlspecialchars($_POST['deskripsi'] ?? ''); ?></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="deadline">Deadline</label>
+                    <input type="datetime-local" name="deadline" id="deadline" required 
+                           value="<?php echo htmlspecialchars($_POST['deadline'] ?? ''); ?>"
+                           class="form-control">
+                    <small style="color: #666; margin-top: 5px; display: block;">
+                        ⏰ Pilih tanggal dan waktu batas akhir pengumpulan tugas
+                    </small>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">
+                        📝 Buat Tugas
+                    </button>
+                    <a href="dashboard_guru.php" class="btn btn-secondary">❌ Batal</a>
+                </div>
+            </form>
         </div>
-        <h2>Buat Tugas Baru</h2>
-        <?php if ($error): ?><div class="error"><?php echo $error; ?></div><?php endif; ?>
-        <?php if ($success): ?><div class="success"><?php echo $success; ?></div><?php endif; ?>
-        <form method="post">
-            <div class="form-group">
-                <label for="mapel_id">Mata Pelajaran</label>
-                <select name="mapel_id" id="mapel_id" required>
-                    <option value="">-- Pilih Mapel --</option>
-                    <?php while($m = mysqli_fetch_assoc($mapel_result)): ?>
-                        <option value="<?php echo $m['id']; ?>" <?php if(isset($_POST['mapel_id']) && $_POST['mapel_id']==$m['id']) echo 'selected'; ?>><?php echo htmlspecialchars($m['nama_mapel']); ?></option>
-                    <?php endwhile; ?>
-                </select>
-            </div>
-            <div class="form-group">
-                <label for="judul">Judul Tugas</label>
-                <input type="text" name="judul" id="judul" required value="<?php echo htmlspecialchars($_POST['judul'] ?? ''); ?>">
-            </div>
-            <div class="form-group">
-                <label for="deskripsi">Deskripsi</label>
-                <textarea name="deskripsi" id="deskripsi" rows="4"><?php echo htmlspecialchars($_POST['deskripsi'] ?? ''); ?></textarea>
-            </div>
-            <div class="form-group">
-                <label for="deadline">Deadline</label>
-                <input type="datetime-local" name="deadline" id="deadline" required value="<?php echo htmlspecialchars($_POST['deadline'] ?? ''); ?>">
-            </div>
-            <button type="submit">Buat Tugas</button>
-        </form>
+
+        <!-- Tips -->
+        <div class="panel">
+            <h3>💡 Tips Membuat Tugas yang Baik</h3>
+            <ul style="color: #666; line-height: 1.6;">
+                <li>Berikan judul yang jelas dan spesifik</li>
+                <li>Jelaskan deskripsi tugas secara detail agar siswa memahami apa yang harus dikerjakan</li>
+                <li>Atur deadline yang realistis dan memberikan waktu cukup untuk siswa</li>
+                <li>Pastikan mata pelajaran yang dipilih sudah benar</li>
+            </ul>
+        </div>
+        
+        <!-- Navigation -->
+        <div class="nav">
+            <a href="dashboard_guru.php">🏠 Dashboard</a>
+            <a href="kelola_mapel.php">📚 Mata Pelajaran</a>
+            <a href="kelola_materi.php">📖 Materi</a>
+            <a href="buat_tugas.php">📝 Tugas</a>
+            <a href="laporan_nilai.php">📊 Nilai</a>
+            <a href="profil.php">👤 Profil</a>
+            <a href="logout.php">🚪 Logout</a>
+        </div>
     </div>
 </body>
 </html> 

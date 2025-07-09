@@ -52,73 +52,108 @@ if (isset($_GET['hapus']) && $mapel_id && $mapel_data) {
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <title>Kelola Materi</title>
-    <style>
-        body { font-family: Arial, sans-serif; background: #f4f4f4; }
-        .container { width: 90%; max-width: 800px; margin: 30px auto; background: #fff; padding: 30px; border-radius: 8px; box-shadow: 0 0 10px #ccc; }
-        h2 { margin-top: 0; }
-        .nav { margin-bottom: 20px; }
-        .nav a { margin-right: 15px; text-decoration: none; color: #007bff; }
-        .nav a:hover { text-decoration: underline; }
-        .error { color: red; margin-bottom: 10px; }
-        .success { color: green; margin-bottom: 10px; }
-        table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
-        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-        th { background: #f0f0f0; }
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kelola Materi - Sistem Manajemen Sekolah</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="container">
-        <div class="nav">
-            <a href="dashboard_guru.php">Dashboard</a>
-            <a href="tambah_materi.php">Tambah Materi</a>
-            <a href="kelola_mapel.php">Kelola Mapel</a>
-            <a href="logout.php">Logout</a>
-        </div>
-        <h2>Kelola Materi</h2>
-        <?php if ($error): ?><div class="error"><?php echo $error; ?></div><?php endif; ?>
-        <?php if ($success): ?><div class="success"><?php echo $success; ?></div><?php endif; ?>
-        <form method="get" style="margin-bottom:20px;">
-            <label for="mapel_id">Pilih Mata Pelajaran:</label>
-            <select name="mapel_id" id="mapel_id" required onchange="this.form.submit()">
-                <option value="">-- Pilih Mapel --</option>
-                <?php while($m = mysqli_fetch_assoc($mapel_result)): ?>
-                    <option value="<?php echo $m['id']; ?>" <?php if($mapel_id==$m['id']) echo 'selected'; ?>><?php echo htmlspecialchars($m['nama_mapel']); ?></option>
-                <?php endwhile; ?>
-            </select>
-        </form>
-        <?php if ($mapel_data): ?>
-            <h3>Materi untuk Mapel: <?php echo htmlspecialchars($mapel_data['nama_mapel']); ?></h3>
-            <table>
-                <tr>
-                    <th>No</th>
-                    <th>Judul</th>
-                    <th>Konten</th>
-                    <th>File</th>
-                    <th>Aksi</th>
-                </tr>
-                <?php if ($materi_result && mysqli_num_rows($materi_result) > 0): $no=1; while($materi = mysqli_fetch_assoc($materi_result)): ?>
-                <tr>
-                    <td><?php echo $no++; ?></td>
-                    <td><?php echo htmlspecialchars($materi['judul']); ?></td>
-                    <td><?php echo nl2br(htmlspecialchars($materi['konten'])); ?></td>
-                    <td>
-                        <?php if ($materi['file_name']): ?>
-                            <a href="uploads/<?php echo urlencode($materi['file_name']); ?>" target="_blank">Download</a>
-                        <?php else: echo '-'; endif; ?>
-                    </td>
-                    <td>
-                        <a href="edit_materi.php?id=<?php echo $materi['id']; ?>">Edit</a> |
-                        <a href="kelola_materi.php?mapel_id=<?php echo $mapel_id; ?>&hapus=<?php echo $materi['id']; ?>" onclick="return confirm('Yakin hapus materi ini?')">Hapus</a>
-                    </td>
-                </tr>
-                <?php endwhile; else: ?>
-                <tr><td colspan="5">Belum ada materi.</td></tr>
-                <?php endif; ?>
-            </table>
-        <?php elseif($mapel_id): ?>
-            <p>Mata pelajaran tidak ditemukan atau Anda tidak memiliki akses.</p>
+        <h2>📖 Kelola Materi Pembelajaran</h2>
+        
+        <?php if ($error): ?>
+            <div class="alert alert-error">❌ <?php echo $error; ?></div>
         <?php endif; ?>
+        <?php if ($success): ?>
+            <div class="alert alert-success">✅ <?php echo $success; ?></div>
+        <?php endif; ?>
+
+        <!-- Pilih Mata Pelajaran -->
+        <div class="panel">
+            <h3>📚 Pilih Mata Pelajaran</h3>
+            <form method="get" class="form">
+                <div class="form-group">
+                    <label for="mapel_id">Mata Pelajaran:</label>
+                    <select name="mapel_id" id="mapel_id" required onchange="this.form.submit()" class="form-control">
+                        <option value="">-- Pilih Mata Pelajaran --</option>
+                        <?php while($m = mysqli_fetch_assoc($mapel_result)): ?>
+                            <option value="<?php echo $m['id']; ?>" <?php if($mapel_id==$m['id']) echo 'selected'; ?>>
+                                <?php echo htmlspecialchars($m['nama_mapel']); ?>
+                            </option>
+                        <?php endwhile; ?>
+                    </select>
+                </div>
+            </form>
+        </div>
+
+        <?php if ($mapel_data): ?>
+            <!-- Daftar Materi -->
+            <div class="panel">
+                <h3>📋 Materi untuk: <strong><?php echo htmlspecialchars($mapel_data['nama_mapel']); ?></strong></h3>
+                
+                <div class="quick-actions" style="margin-bottom: 20px;">
+                    <a href="tambah_materi.php?mapel_id=<?php echo $mapel_id; ?>" class="btn btn-primary">
+                        ➕ Tambah Materi Baru
+                    </a>
+                </div>
+
+                <?php if ($materi_result && mysqli_num_rows($materi_result) > 0): ?>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>No</th>
+                                <th>Judul Materi</th>
+                                <th>Deskripsi</th>
+                                <th>File</th>
+                                <th>Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php $no=1; while($materi = mysqli_fetch_assoc($materi_result)): ?>
+                            <tr>
+                                <td><?php echo $no++; ?></td>
+                                <td><strong><?php echo htmlspecialchars($materi['judul']); ?></strong></td>
+                                <td><?php echo htmlspecialchars($materi['konten'] ?: '-'); ?></td>
+                                <td>
+                                    <?php if ($materi['file_name']): ?>
+                                        <a href="uploads/<?php echo urlencode($materi['file_name']); ?>" 
+                                           target="_blank" class="file-link">📄 Download</a>
+                                    <?php else: ?>
+                                        <span style="color: #6c757d;">-</span>
+                                    <?php endif; ?>
+                                </td>
+                                <td>
+                                    <a href="edit_materi.php?id=<?php echo $materi['id']; ?>" class="btn btn-warning btn-sm">✏️ Edit</a>
+                                    <a href="kelola_materi.php?mapel_id=<?php echo $mapel_id; ?>&hapus=<?php echo $materi['id']; ?>" 
+                                       onclick="return confirm('⚠️ Yakin ingin menghapus materi ini?')" 
+                                       class="btn btn-danger btn-sm">🗑️ Hapus</a>
+                                </td>
+                            </tr>
+                            <?php endwhile; ?>
+                        </tbody>
+                    </table>
+                <?php else: ?>
+                    <div class="empty-message">
+                        <h3>📚 Belum ada materi</h3>
+                        <p>Belum ada materi untuk mata pelajaran ini. Silakan tambahkan materi baru.</p>
+                    </div>
+                <?php endif; ?>
+            </div>
+        <?php elseif($mapel_id): ?>
+            <div class="alert alert-error">
+                ❌ Mata pelajaran tidak ditemukan atau Anda tidak memiliki akses.
+            </div>
+        <?php endif; ?>
+        
+        <!-- Navigation -->
+        <div class="nav">
+            <a href="dashboard_guru.php">🏠 Dashboard</a>
+            <a href="kelola_mapel.php">📚 Mata Pelajaran</a>
+            <a href="kelola_materi.php">📖 Materi</a>
+            <a href="buat_tugas.php">📝 Tugas</a>
+            <a href="laporan_nilai.php">📊 Nilai</a>
+            <a href="profil.php">👤 Profil</a>
+            <a href="logout.php">🚪 Logout</a>
+        </div>
     </div>
 </body>
 </html> 

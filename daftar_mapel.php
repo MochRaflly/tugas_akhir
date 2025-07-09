@@ -1,54 +1,77 @@
 <?php
 session_start();
-include 'koneksi.php';
+require_once 'koneksi.php';
 
-if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'siswa') {
-    header('Location: login.php');
-    exit;
+// Cek login
+if (!isset($_SESSION['user_id']) || $_SESSION['role'] != 'siswa') {
+    header("Location: login.php");
+    exit();
 }
 
-$mapel_result = mysqli_query($conn, "SELECT * FROM mata_pelajaran");
+// Ambil daftar mata pelajaran dengan error handling
+try {
+    $sql = "SELECT mp.*, u.nama as nama_guru 
+            FROM mata_pelajaran mp 
+            LEFT JOIN users u ON mp.guru_id = u.id 
+            ORDER BY mp.nama ASC";
+    $result = $conn->query($sql);
+} catch (Exception $e) {
+    $result = null;
+}
 ?>
+
 <!DOCTYPE html>
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <title>Daftar Mata Pelajaran</title>
-    <style>
-        body { font-family: Arial, sans-serif; background: #f4f4f4; }
-        .container { width: 90%; max-width: 700px; margin: 30px auto; background: #fff; padding: 30px; border-radius: 8px; box-shadow: 0 0 10px #ccc; }
-        h2 { margin-top: 0; }
-        table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
-        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-        th { background: #f0f0f0; }
-        .nav { margin-bottom: 20px; }
-        .nav a { margin-right: 15px; text-decoration: none; color: #007bff; }
-        .nav a:hover { text-decoration: underline; }
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daftar Mata Pelajaran - Sistem Manajemen Sekolah</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="container">
+        <h2>📚 Daftar Mata Pelajaran</h2>
+        
+        <?php if ($result && $result->num_rows > 0): ?>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Mata Pelajaran</th>
+                        <th>Deskripsi</th>
+                        <th>Guru Pengampu</th>
+                        <th>Aksi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php while ($mapel = $result->fetch_assoc()): ?>
+                        <tr>
+                            <td><strong><?php echo htmlspecialchars($mapel['nama']); ?></strong></td>
+                            <td><?php echo htmlspecialchars($mapel['deskripsi']); ?></td>
+                            <td><?php echo htmlspecialchars($mapel['nama_guru'] ?? 'Belum ditentukan'); ?></td>
+                            <td>
+                                <a href="daftar_materi.php?mapel_id=<?php echo $mapel['id']; ?>" class="btn btn-info">Lihat Materi</a>
+                            </td>
+                        </tr>
+                    <?php endwhile; ?>
+                </tbody>
+            </table>
+        <?php else: ?>
+            <div class="empty-message">
+                <h3>📚 Belum ada mata pelajaran</h3>
+                <p>Mata pelajaran akan ditambahkan oleh guru.</p>
+            </div>
+        <?php endif; ?>
+        
+        <!-- Navigation -->
         <div class="nav">
-            <a href="dashboard_siswa.php">Dashboard</a>
-            <a href="logout.php">Logout</a>
+            <a href="dashboard_siswa.php">🏠 Dashboard</a>
+            <a href="daftar_tugas.php">📋 Tugas</a>
+            <a href="daftar_mapel.php">📚 Mata Pelajaran</a>
+            <a href="daftar_materi.php">📖 Materi</a>
+            <a href="nilai_saya.php">📊 Nilai</a>
+            <a href="profil.php">👤 Profil</a>
+            <a href="logout.php">🚪 Logout</a>
         </div>
-        <h2>Daftar Mata Pelajaran</h2>
-        <table>
-            <tr>
-                <th>No</th>
-                <th>Nama Mapel</th>
-                <th>Deskripsi</th>
-                <th>Aksi</th>
-            </tr>
-            <?php $no=1; while($mapel = mysqli_fetch_assoc($mapel_result)): ?>
-            <tr>
-                <td><?php echo $no++; ?></td>
-                <td><?php echo htmlspecialchars($mapel['nama_mapel']); ?></td>
-                <td><?php echo htmlspecialchars($mapel['deskripsi']); ?></td>
-                <td><a href="materi.php?mapel_id=<?php echo $mapel['id']; ?>">Lihat Materi</a></td>
-            </tr>
-            <?php endwhile; ?>
-        </table>
     </div>
 </body>
 </html> 

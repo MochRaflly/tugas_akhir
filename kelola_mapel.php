@@ -61,75 +61,97 @@ if (isset($_GET['edit'])) {
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <title>Kelola Mata Pelajaran</title>
-    <style>
-        body { font-family: Arial, sans-serif; background: #f4f4f4; }
-        .container { width: 90%; max-width: 700px; margin: 30px auto; background: #fff; padding: 30px; border-radius: 8px; box-shadow: 0 0 10px #ccc; }
-        h2 { margin-top: 0; }
-        .nav { margin-bottom: 20px; }
-        .nav a { margin-right: 15px; text-decoration: none; color: #007bff; }
-        .nav a:hover { text-decoration: underline; }
-        .error { color: red; margin-bottom: 10px; }
-        .success { color: green; margin-bottom: 10px; }
-        table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
-        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-        th { background: #f0f0f0; }
-        .form-group { margin-bottom: 10px; }
-        label { display: block; margin-bottom: 5px; }
-        input[type="text"], textarea { width: 100%; padding: 8px; box-sizing: border-box; }
-        button { padding: 8px 16px; background: #007bff; color: #fff; border: none; border-radius: 4px; cursor: pointer; }
-        button:hover { background: #0056b3; }
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kelola Mata Pelajaran - Sistem Manajemen Sekolah</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="container">
-        <div class="nav">
-            <a href="dashboard_guru.php">Dashboard</a>
-            <a href="logout.php">Logout</a>
+        <h2>📚 Kelola Mata Pelajaran</h2>
+        
+        <?php if ($error): ?>
+            <div class="alert alert-error">❌ <?php echo $error; ?></div>
+        <?php endif; ?>
+        <?php if ($success): ?>
+            <div class="alert alert-success">✅ <?php echo $success; ?></div>
+        <?php endif; ?>
+
+        <!-- Form Tambah/Edit -->
+        <div class="panel">
+            <h3><?php echo $edit_data ? '✏️ Edit Mata Pelajaran' : '➕ Tambah Mata Pelajaran Baru'; ?></h3>
+            <form method="post" class="form">
+                <?php if ($edit_data): ?>
+                    <input type="hidden" name="id" value="<?php echo $edit_data['id']; ?>">
+                <?php endif; ?>
+                <div class="form-group">
+                    <label for="nama_mapel">Nama Mata Pelajaran</label>
+                    <input type="text" id="nama_mapel" name="nama_mapel" required 
+                           value="<?php echo htmlspecialchars($edit_data['nama_mapel'] ?? ''); ?>"
+                           placeholder="Contoh: Matematika, Bahasa Indonesia, dll.">
+                </div>
+                <div class="form-group">
+                    <label for="deskripsi">Deskripsi</label>
+                    <textarea id="deskripsi" name="deskripsi" rows="3" 
+                              placeholder="Deskripsi singkat tentang mata pelajaran ini..."><?php echo htmlspecialchars($edit_data['deskripsi'] ?? ''); ?></textarea>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" name="<?php echo $edit_data ? 'edit' : 'tambah'; ?>" class="btn btn-primary">
+                        <?php echo $edit_data ? '💾 Update Mata Pelajaran' : '➕ Tambah Mata Pelajaran'; ?>
+                    </button>
+                    <?php if ($edit_data): ?>
+                        <a href="kelola_mapel.php" class="btn btn-secondary">❌ Batal</a>
+                    <?php endif; ?>
+                </div>
+            </form>
         </div>
-        <h2>Kelola Mata Pelajaran</h2>
-        <?php if ($error): ?><div class="error"><?php echo $error; ?></div><?php endif; ?>
-        <?php if ($success): ?><div class="success"><?php echo $success; ?></div><?php endif; ?>
 
-        <h3><?php echo $edit_data ? 'Edit Mata Pelajaran' : 'Tambah Mata Pelajaran'; ?></h3>
-        <form method="post">
-            <?php if ($edit_data): ?>
-                <input type="hidden" name="id" value="<?php echo $edit_data['id']; ?>">
+        <!-- Daftar Mata Pelajaran -->
+        <div class="panel">
+            <h3>📋 Daftar Mata Pelajaran Anda</h3>
+            <?php if (mysqli_num_rows($mapel_result) > 0): ?>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>No</th>
+                            <th>Nama Mata Pelajaran</th>
+                            <th>Deskripsi</th>
+                            <th>Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php $no=1; while($mapel = mysqli_fetch_assoc($mapel_result)): ?>
+                        <tr>
+                            <td><?php echo $no++; ?></td>
+                            <td><strong><?php echo htmlspecialchars($mapel['nama_mapel']); ?></strong></td>
+                            <td><?php echo htmlspecialchars($mapel['deskripsi'] ?: '-'); ?></td>
+                            <td>
+                                <a href="kelola_mapel.php?edit=<?php echo $mapel['id']; ?>" class="btn btn-warning btn-sm">✏️ Edit</a>
+                                <a href="kelola_mapel.php?hapus=<?php echo $mapel['id']; ?>" 
+                                   onclick="return confirm('⚠️ Yakin ingin menghapus mata pelajaran ini?')" 
+                                   class="btn btn-danger btn-sm">🗑️ Hapus</a>
+                            </td>
+                        </tr>
+                        <?php endwhile; ?>
+                    </tbody>
+                </table>
+            <?php else: ?>
+                <div class="empty-message">
+                    <h3>📚 Belum ada mata pelajaran</h3>
+                    <p>Anda belum membuat mata pelajaran. Silakan tambahkan mata pelajaran baru di atas.</p>
+                </div>
             <?php endif; ?>
-            <div class="form-group">
-                <label for="nama_mapel">Nama Mapel</label>
-                <input type="text" id="nama_mapel" name="nama_mapel" required value="<?php echo htmlspecialchars($edit_data['nama_mapel'] ?? ''); ?>">
-            </div>
-            <div class="form-group">
-                <label for="deskripsi">Deskripsi</label>
-                <textarea id="deskripsi" name="deskripsi" rows="2"><?php echo htmlspecialchars($edit_data['deskripsi'] ?? ''); ?></textarea>
-            </div>
-            <button type="submit" name="<?php echo $edit_data ? 'edit' : 'tambah'; ?>"><?php echo $edit_data ? 'Update' : 'Tambah'; ?></button>
-            <?php if ($edit_data): ?>
-                <a href="kelola_mapel.php" style="margin-left:10px;">Batal</a>
-            <?php endif; ?>
-        </form>
-
-        <h3>Daftar Mata Pelajaran Anda</h3>
-        <table>
-            <tr>
-                <th>No</th>
-                <th>Nama Mapel</th>
-                <th>Deskripsi</th>
-                <th>Aksi</th>
-            </tr>
-            <?php $no=1; while($mapel = mysqli_fetch_assoc($mapel_result)): ?>
-            <tr>
-                <td><?php echo $no++; ?></td>
-                <td><?php echo htmlspecialchars($mapel['nama_mapel']); ?></td>
-                <td><?php echo htmlspecialchars($mapel['deskripsi']); ?></td>
-                <td>
-                    <a href="kelola_mapel.php?edit=<?php echo $mapel['id']; ?>">Edit</a> |
-                    <a href="kelola_mapel.php?hapus=<?php echo $mapel['id']; ?>" onclick="return confirm('Yakin hapus?')">Hapus</a>
-                </td>
-            </tr>
-            <?php endwhile; ?>
-        </table>
+        </div>
+        
+        <!-- Navigation -->
+        <div class="nav">
+            <a href="dashboard_guru.php">🏠 Dashboard</a>
+            <a href="kelola_mapel.php">📚 Mata Pelajaran</a>
+            <a href="kelola_materi.php">📖 Materi</a>
+            <a href="buat_tugas.php">📝 Tugas</a>
+            <a href="laporan_nilai.php">📊 Nilai</a>
+            <a href="profil.php">👤 Profil</a>
+            <a href="logout.php">🚪 Logout</a>
+        </div>
     </div>
 </body>
 </html> 

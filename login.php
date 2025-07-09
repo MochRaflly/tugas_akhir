@@ -1,68 +1,74 @@
 <?php
 session_start();
-include 'koneksi.php';
+require_once 'koneksi.php';
 
-$error = '';
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $username = mysqli_real_escape_string($conn, $_POST['username']);
+if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    $username = $_POST['username'];
     $password = $_POST['password'];
-
-    $query = "SELECT * FROM users WHERE username='$username' LIMIT 1";
-    $result = mysqli_query($conn, $query);
-    $user = mysqli_fetch_assoc($result);
-
-    if ($user && password_verify($password, $user['password'])) {
-        $_SESSION['user_id'] = $user['id'];
-        $_SESSION['username'] = $user['username'];
-        $_SESSION['role'] = $user['role'];
-        $_SESSION['nama_lengkap'] = $user['nama_lengkap'];
-        // Redirect sesuai role
-        if ($user['role'] === 'guru') {
-            header('Location: dashboard_guru.php');
-            exit;
-        } else if ($user['role'] === 'siswa') {
-            header('Location: dashboard_siswa.php');
-            exit;
+    
+    $sql = "SELECT * FROM users WHERE username = ?";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("s", $username);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    if ($result->num_rows == 1) {
+        $user = $result->fetch_assoc();
+        if (password_verify($password, $user['password'])) {
+            $_SESSION['user_id'] = $user['id'];
+            $_SESSION['username'] = $user['username'];
+            $_SESSION['role'] = $user['role'];
+            // Gunakan nama_lengkap jika ada, jika tidak gunakan nama
+            $_SESSION['nama'] = $user['nama_lengkap'] ?? $user['nama'] ?? $user['username'];
+            
+            if ($user['role'] == 'guru') {
+                header("Location: dashboard_guru.php");
+            } else {
+                header("Location: dashboard_siswa.php");
+            }
+            exit();
         } else {
-            $error = 'Role tidak dikenali.';
+            $error = "Password salah!";
         }
     } else {
-        $error = 'Username atau password salah!';
+        $error = "Username tidak ditemukan!";
     }
 }
 ?>
+
 <!DOCTYPE html>
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <title>Login</title>
-    <style>
-        body { font-family: Arial, sans-serif; background: #f4f4f4; }
-        .login-container { width: 350px; margin: 100px auto; background: #fff; padding: 30px; border-radius: 8px; box-shadow: 0 0 10px #ccc; }
-        .login-container h2 { text-align: center; }
-        .form-group { margin-bottom: 15px; }
-        label { display: block; margin-bottom: 5px; }
-        input[type="text"], input[type="password"] { width: 100%; padding: 8px; box-sizing: border-box; }
-        .error { color: red; text-align: center; margin-bottom: 10px; }
-        button { width: 100%; padding: 10px; background: #007bff; color: #fff; border: none; border-radius: 4px; cursor: pointer; }
-        button:hover { background: #0056b3; }
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Sistem Manajemen Sekolah</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="login-container">
-        <h2>Login</h2>
-        <?php if ($error) { echo '<div class="error">'.$error.'</div>'; } ?>
-        <form method="post" action="">
+        <h2>🔐 Login</h2>
+        
+        <?php if (isset($error)): ?>
+            <div class="error"><?php echo $error; ?></div>
+        <?php endif; ?>
+        
+        <form method="POST">
             <div class="form-group">
-                <label for="username">Username</label>
-                <input type="text" id="username" name="username" required autofocus>
+                <label for="username">Username:</label>
+                <input type="text" id="username" name="username" required>
             </div>
+            
             <div class="form-group">
-                <label for="password">Password</label>
+                <label for="password">Password:</label>
                 <input type="password" id="password" name="password" required>
             </div>
-            <button type="submit">Login</button>
+            
+            <button type="submit" class="btn">Login</button>
         </form>
+        
+        <div style="text-align: center; margin-top: 20px;">
+            <p>Belum punya akun? <a href="register.php" class="btn btn-info">Daftar</a></p>
+        </div>
     </div>
 </body>
 </html> 

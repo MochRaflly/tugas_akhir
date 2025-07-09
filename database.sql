@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS users (
     id INT AUTO_INCREMENT PRIMARY KEY,
     username VARCHAR(50) NOT NULL UNIQUE,
     password VARCHAR(255) NOT NULL,
-    role ENUM('siswa','guru','admin') NOT NULL,
+    role ENUM('siswa','guru') NOT NULL,
     nama_lengkap VARCHAR(100) NOT NULL,
     kelas VARCHAR(20)
 );
@@ -54,11 +54,10 @@ CREATE TABLE IF NOT EXISTS pengumpulan (
     FOREIGN KEY (siswa_id) REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
--- Sample data users (password: admin123, guru123, siswa123)
+-- Sample data users (password: guru123, siswa123)
 INSERT INTO users (username, password, role, nama_lengkap, kelas) VALUES
-('admin', '$2y$10$QeQwQn6QwQn6QwQn6QwQnOQwQn6QwQn6QwQn6QwQn6QwQn6QwQn6', 'admin', 'Administrator', NULL),
-('guru1', '$2y$10$wH8QwQn6QwQn6QwQn6QwQnOQwQn6QwQn6QwQn6QwQn6QwQn6QwQn6', 'guru', 'Budi Guru', NULL),
-('siswa1', '$2y$10$wH8QwQn6QwQn6QwQn6QwQnOQwQn6QwQn6QwQn6QwQn6QwQn6QwQn6', 'siswa', 'Andi Siswa', 'XII RPL');
+('guru1', '$2y$10$6s6QwQn6QwQn6QwQn6QwQnOQwQn6QwQn6QwQn6QwQn6QwQn6QwQn6', 'guru', 'Budi Guru', NULL),
+('siswa1', '$2y$10$8QwQn6QwQn6QwQn6QwQnOQwQn6QwQn6QwQn6QwQn6QwQn6QwQn6', 'siswa', 'Andi Siswa', 'XII RPL');
 
 -- Sample data mata_pelajaran
 INSERT INTO mata_pelajaran (nama_mapel, deskripsi, guru_id) VALUES

@@ -1,91 +1,187 @@
 <?php
 session_start();
-include 'koneksi.php';
+require_once 'koneksi.php';
 
+// Cek login
 if (!isset($_SESSION['user_id'])) {
-    header('Location: login.php');
-    exit;
+    header("Location: login.php");
+    exit();
 }
 
 $user_id = $_SESSION['user_id'];
 $role = $_SESSION['role'];
-$error = '';
-$success = '';
 
-// Ambil data user
-$user = mysqli_query($conn, "SELECT * FROM users WHERE id = $user_id");
-$data = mysqli_fetch_assoc($user);
+// Ambil data profil dengan error handling
+try {
+    $sql = "SELECT * FROM users WHERE id = ?";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("i", $user_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $user = $result->fetch_assoc();
+} catch (Exception $e) {
+    header("Location: login.php");
+    exit();
+}
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $nama_lengkap = mysqli_real_escape_string($conn, $_POST['nama_lengkap']);
-    $password = $_POST['password'];
-    $update_query = '';
-    if (!$nama_lengkap) {
-        $error = 'Nama lengkap wajib diisi.';
+// Proses update profil
+if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    $nama = $_POST['nama'];
+    $email = $_POST['email'] ?? '';
+    $password_lama = $_POST['password_lama'] ?? '';
+    $password_baru = $_POST['password_baru'] ?? '';
+    $konfirmasi_password = $_POST['konfirmasi_password'] ?? '';
+    
+    $error = '';
+    $success = '';
+    
+    // Validasi input
+    if (empty($nama)) {
+        $error = "Nama tidak boleh kosong!";
+    } elseif ($password_baru && $password_baru != $konfirmasi_password) {
+        $error = "Konfirmasi password tidak cocok!";
+    } elseif ($password_baru && strlen($password_baru) < 6) {
+        $error = "Password minimal 6 karakter!";
+    } elseif ($password_baru && !password_verify($password_lama, $user['password'])) {
+        $error = "Password lama salah!";
     } else {
-        if ($password) {
-            $password_hash = password_hash($password, PASSWORD_DEFAULT);
-            $update_query = "UPDATE users SET nama_lengkap='$nama_lengkap', password='$password_hash' WHERE id=$user_id";
+        // Update data
+        if ($password_baru) {
+            $hashed_password = password_hash($password_baru, PASSWORD_DEFAULT);
+            $sql_update = "UPDATE users SET nama = ?, email = ?, password = ? WHERE id = ?";
+            $stmt_update = $conn->prepare($sql_update);
+            $stmt_update->bind_param("sssi", $nama, $email, $hashed_password, $user_id);
         } else {
-            $update_query = "UPDATE users SET nama_lengkap='$nama_lengkap' WHERE id=$user_id";
+            $sql_update = "UPDATE users SET nama = ?, email = ? WHERE id = ?";
+            $stmt_update = $conn->prepare($sql_update);
+            $stmt_update->bind_param("ssi", $nama, $email, $user_id);
         }
-        if (mysqli_query($conn, $update_query)) {
-            $success = 'Profil berhasil diupdate!';
-            $_SESSION['nama_lengkap'] = $nama_lengkap;
-            // Refresh data
-            $user = mysqli_query($conn, "SELECT * FROM users WHERE id = $user_id");
-            $data = mysqli_fetch_assoc($user);
+        
+        if ($stmt_update->execute()) {
+            $success = "Profil berhasil diperbarui!";
+            $_SESSION['nama'] = $nama;
+            
+            // Refresh data user
+            $stmt->execute();
+            $user = $stmt->get_result()->fetch_assoc();
         } else {
-            $error = 'Gagal mengupdate profil.';
+            $error = "Gagal memperbarui profil!";
         }
     }
 }
 ?>
+
 <!DOCTYPE html>
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <title>Edit Profil</title>
-    <style>
-        body { font-family: Arial, sans-serif; background: #f4f4f4; }
-        .container { width: 90%; max-width: 500px; margin: 30px auto; background: #fff; padding: 30px; border-radius: 8px; box-shadow: 0 0 10px #ccc; }
-        h2 { margin-top: 0; }
-        .nav { margin-bottom: 20px; }
-        .nav a { margin-right: 15px; text-decoration: none; color: #007bff; }
-        .nav a:hover { text-decoration: underline; }
-        .error { color: red; margin-bottom: 10px; }
-        .success { color: green; margin-bottom: 10px; }
-        .form-group { margin-bottom: 15px; }
-        label { display: block; margin-bottom: 5px; }
-        input[type="text"], input[type="password"] { width: 100%; padding: 8px; box-sizing: border-box; }
-        button { padding: 10px 20px; background: #007bff; color: #fff; border: none; border-radius: 4px; cursor: pointer; }
-        button:hover { background: #0056b3; }
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profil - Sistem Manajemen Sekolah</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="container">
-        <div class="nav">
-            <?php if ($role === 'guru'): ?>
-                <a href="dashboard_guru.php">Dashboard</a>
-            <?php else: ?>
-                <a href="dashboard_siswa.php">Dashboard</a>
-            <?php endif; ?>
-            <a href="logout.php">Logout</a>
+        <h2>👤 Profil Saya</h2>
+        
+        <?php if (isset($error)): ?>
+            <div class="error"><?php echo $error; ?></div>
+        <?php endif; ?>
+        
+        <?php if (isset($success)): ?>
+            <div class="success"><?php echo $success; ?></div>
+        <?php endif; ?>
+        
+        <!-- Informasi Profil -->
+        <div class="panel">
+            <h3>📋 Informasi Profil</h3>
+            <table>
+                <tr>
+                    <td width="150"><strong>Username:</strong></td>
+                    <td><?php echo htmlspecialchars($user['username']); ?></td>
+                </tr>
+                <tr>
+                    <td><strong>Nama Lengkap:</strong></td>
+                    <td><?php echo htmlspecialchars($user['nama'] ?? $user['nama_lengkap'] ?? 'Tidak ada'); ?></td>
+                </tr>
+                <tr>
+                    <td><strong>Role:</strong></td>
+                    <td>
+                        <span class="status-badge <?php echo $user['role'] == 'guru' ? 'status-selesai' : 'status-info'; ?>">
+                            <?php echo ucfirst($user['role']); ?>
+                        </span>
+                    </td>
+                </tr>
+                <?php if ($user['role'] == 'siswa' && isset($user['kelas']) && $user['kelas']): ?>
+                <tr>
+                    <td><strong>Kelas:</strong></td>
+                    <td><?php echo htmlspecialchars($user['kelas']); ?></td>
+                </tr>
+                <?php endif; ?>
+                <tr>
+                    <td><strong>Email:</strong></td>
+                    <td><?php echo htmlspecialchars($user['email'] ?? '-'); ?></td>
+                </tr>
+                <tr>
+                    <td><strong>Bergabung Sejak:</strong></td>
+                    <td><?php echo isset($user['created_at']) ? date('d/m/Y H:i', strtotime($user['created_at'])) : '-'; ?></td>
+                </tr>
+            </table>
         </div>
-        <h2>Edit Profil</h2>
-        <?php if ($error): ?><div class="error"><?php echo $error; ?></div><?php endif; ?>
-        <?php if ($success): ?><div class="success"><?php echo $success; ?></div><?php endif; ?>
-        <form method="post">
-            <div class="form-group">
-                <label for="nama_lengkap">Nama Lengkap</label>
-                <input type="text" name="nama_lengkap" id="nama_lengkap" required value="<?php echo htmlspecialchars($data['nama_lengkap']); ?>">
-            </div>
-            <div class="form-group">
-                <label for="password">Password Baru (kosongkan jika tidak ingin ganti)</label>
-                <input type="password" name="password" id="password">
-            </div>
-            <button type="submit">Simpan Perubahan</button>
-        </form>
+        
+        <!-- Form Edit Profil -->
+        <div class="panel">
+            <h3>✏️ Edit Profil</h3>
+            <form method="POST">
+                <div class="form-group">
+                    <label for="nama">Nama Lengkap:</label>
+                    <input type="text" id="nama" name="nama" value="<?php echo htmlspecialchars($user['nama'] ?? $user['nama_lengkap'] ?? ''); ?>" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="email">Email (Opsional):</label>
+                    <input type="email" id="email" name="email" value="<?php echo htmlspecialchars($user['email'] ?? ''); ?>">
+                </div>
+                
+                <hr style="margin: 30px 0; border: 1px solid #e9ecef;">
+                
+                <h4>🔐 Ubah Password (Opsional)</h4>
+                <div class="form-group">
+                    <label for="password_lama">Password Lama:</label>
+                    <input type="password" id="password_lama" name="password_lama">
+                </div>
+                
+                <div class="form-group">
+                    <label for="password_baru">Password Baru:</label>
+                    <input type="password" id="password_baru" name="password_baru" minlength="6">
+                </div>
+                
+                <div class="form-group">
+                    <label for="konfirmasi_password">Konfirmasi Password Baru:</label>
+                    <input type="password" id="konfirmasi_password" name="konfirmasi_password" minlength="6">
+                </div>
+                
+                <button type="submit" class="btn btn-success">💾 Simpan Perubahan</button>
+            </form>
+        </div>
+        
+        <!-- Navigation -->
+        <div class="nav">
+            <?php if ($role == 'guru'): ?>
+                <a href="dashboard_guru.php">🏠 Dashboard</a>
+                <a href="kelola_mapel.php">📚 Mata Pelajaran</a>
+                <a href="kelola_materi.php">📖 Materi</a>
+                <a href="buat_tugas.php">📝 Tugas</a>
+                <a href="laporan_nilai.php">📊 Nilai</a>
+            <?php else: ?>
+                <a href="dashboard_siswa.php">🏠 Dashboard</a>
+                <a href="daftar_tugas.php">📋 Tugas</a>
+                <a href="daftar_mapel.php">📚 Mata Pelajaran</a>
+                <a href="daftar_materi.php">📖 Materi</a>
+                <a href="nilai_saya.php">📊 Nilai</a>
+            <?php endif; ?>
+            <a href="profil.php">👤 Profil</a>
+            <a href="logout.php">🚪 Logout</a>
+        </div>
     </div>
 </body>
 </html> 
