@@ -1,0 +1,22 @@
+-- Membuat database
+CREATE DATABASE IF NOT EXISTS tugas_akhir;
+USE tugas_akhir;
+
+-- Membuat tabel users
+CREATE TABLE IF NOT EXISTS users (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(50) NOT NULL,
+    password VARCHAR(255) NOT NULL,
+    role ENUM('siswa','guru') NOT NULL,
+    nama_lengkap VARCHAR(100) NOT NULL,
+    kelas VARCHAR(20)
+);
+
+-- Membuat tabel mata_pelajaran dengan relasi ke users (guru)
+CREATE TABLE IF NOT EXISTS mata_pelajaran (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    nama_mapel VARCHAR(100) NOT NULL,
+    deskripsi TEXT,
+    guru_id INT,
+    FOREIGN KEY (guru_id) REFERENCES users(id) ON DELETE SET NULL ON UPDATE CASCADE
+); 
