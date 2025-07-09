@@ -19,4 +19,14 @@ CREATE TABLE IF NOT EXISTS mata_pelajaran (
     deskripsi TEXT,
     guru_id INT,
     FOREIGN KEY (guru_id) REFERENCES users(id) ON DELETE SET NULL ON UPDATE CASCADE
+);
+
+-- Membuat tabel materi
+CREATE TABLE IF NOT EXISTS materi (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    judul VARCHAR(150) NOT NULL,
+    konten TEXT,
+    mapel_id INT,
+    file_name VARCHAR(255),
+    FOREIGN KEY (mapel_id) REFERENCES mata_pelajaran(id) ON DELETE SET NULL ON UPDATE CASCADE
 ); 
