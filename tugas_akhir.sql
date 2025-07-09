@@ -29,4 +29,14 @@ CREATE TABLE IF NOT EXISTS materi (
     mapel_id INT,
     file_name VARCHAR(255),
     FOREIGN KEY (mapel_id) REFERENCES mata_pelajaran(id) ON DELETE SET NULL ON UPDATE CASCADE
+);
+
+-- Membuat tabel tugas
+CREATE TABLE IF NOT EXISTS tugas (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    judul VARCHAR(150) NOT NULL,
+    deskripsi TEXT,
+    mapel_id INT,
+    deadline DATETIME,
+    FOREIGN KEY (mapel_id) REFERENCES mata_pelajaran(id) ON DELETE SET NULL ON UPDATE CASCADE
 ); 
