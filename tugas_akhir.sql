@@ -39,4 +39,17 @@ CREATE TABLE IF NOT EXISTS tugas (
     mapel_id INT,
     deadline DATETIME,
     FOREIGN KEY (mapel_id) REFERENCES mata_pelajaran(id) ON DELETE SET NULL ON UPDATE CASCADE
+);
+
+-- Membuat tabel pengumpulan
+CREATE TABLE IF NOT EXISTS pengumpulan (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    tugas_id INT,
+    siswa_id INT,
+    file_name VARCHAR(255),
+    nilai DECIMAL(5,2),
+    komentar TEXT,
+    tanggal_kirim DATETIME,
+    FOREIGN KEY (tugas_id) REFERENCES tugas(id) ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY (siswa_id) REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE
 ); 
